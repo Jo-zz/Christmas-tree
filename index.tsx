@@ -8,15 +8,16 @@ import { EffectComposer, Bloom, Vignette, Noise } from "@react-three/postprocess
 import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
 
 // --- Configuration ---
-const PARTICLE_COUNT = 5500; // Slightly denser tree
+const PARTICLE_COUNT = 6000; // Increased density for better shape
 const TREE_HEIGHT = 16;
 const TREE_RADIUS = 6.5;
 
-// True Christmas Colors
-const COLOR_PINE_DEEP = "#013220"; // Very Dark Green
-const COLOR_PINE_VIBRANT = "#228B22"; // Forest Green
-const COLOR_RED = "#D42426"; // Vibrant Red
-const COLOR_GOLD = "#FFD700"; // Pure Gold
+// True Christmas Colors - Adjusted for visibility
+// Using slightly brighter greens so they don't look black in the dark
+const COLOR_PINE_DEEP = "#0f4d2c"; // Deep Pine
+const COLOR_PINE_VIBRANT = "#2e8b57"; // Sea Green / Forest Green
+const COLOR_RED = "#EF4444"; // Bright Red (Tailwind Red 500)
+const COLOR_GOLD = "#FACC15"; // Bright Yellow/Gold (Tailwind Yellow 400)
 const COLOR_WHITE = "#FFFFFF"; 
 
 const EXPLOSION_SPEED = 0.08;
@@ -365,15 +366,15 @@ const ParticleTree = ({
       const g = colors[idx+1];
       const b = colors[idx+2];
       
-      // Heuristic to detect colors based on RGB values
+      // Color matching tolerance
       const isGold = r > 0.8 && g > 0.7 && b < 0.2;
-      const isRed = r > 0.7 && g < 0.2 && b < 0.2;
+      const isRed = r > 0.7 && g < 0.3 && b < 0.3;
       const isWhite = r > 0.9 && g > 0.9 && b > 0.9;
       
-      let scale = 0.15; // Base Leaf Size
+      let scale = 0.18; // Base Leaf Size
       
-      if (isGold) scale = 0.35; // Big Yellow Stars
-      else if (isRed) scale = 0.28; // Red Balls
+      if (isGold) scale = 0.45; // Big Yellow Stars
+      else if (isRed) scale = 0.35; // Red Balls
       else if (isWhite) scale = 0.12; // Tiny lights
 
       dummy.scale.set(scale, scale, scale);
@@ -392,12 +393,15 @@ const ParticleTree = ({
     <group ref={groupRef}>
       <instancedMesh ref={meshRef} args={[undefined, undefined, PARTICLE_COUNT]}>
         <octahedronGeometry args={[1, 0]} /> 
-        {/* Adjusted Material: Removed global emissive to allow true Green colors */}
+        {/* 
+           KEY FIX: Low Metalness, High Roughness.
+           This ensures the green color is actually visible and not washed out by reflections.
+        */}
         <meshStandardMaterial 
             vertexColors 
             toneMapped={false} 
-            roughness={0.4}  // Less shiny, more leafy
-            metalness={0.5}  // Slight sheen but not chrome
+            roughness={0.7} 
+            metalness={0.1}
         />
         <instancedBufferAttribute 
             attach="geometry-attributes-color" 
@@ -420,10 +424,10 @@ const Scene = ({
       <PerspectiveCamera makeDefault position={[0, 1, 28]} fov={45} />
       <OrbitControls enableZoom={false} enablePan={false} maxPolarAngle={Math.PI/1.8} minPolarAngle={Math.PI/3}/>
       
-      {/* Lights */}
-      <ambientLight intensity={0.5} /> {/* Increased ambient for green visibility */}
-      <spotLight position={[10, 20, 10]} intensity={2} angle={0.5} penumbra={1} color="#FFF8E7" castShadow />
-      <pointLight position={[-10, 5, -10]} intensity={1.5} color="#E0F7FA" />
+      {/* Lights - Warmer configuration to help Green and Red pop */}
+      <ambientLight intensity={0.8} /> 
+      <spotLight position={[10, 20, 10]} intensity={2.5} angle={0.5} penumbra={1} color="#FFF8E7" castShadow />
+      <pointLight position={[-10, 5, -10]} intensity={2.0} color="#FFEDD5" /> {/* Warm light from left */}
       
       <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={0.5} />
       <Sparkles count={500} scale={35} size={4} speed={0.3} opacity={0.5} color="#FFF" />
@@ -436,12 +440,12 @@ const Scene = ({
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -10, 0]}>
         <planeGeometry args={[100, 100]} />
-        <meshStandardMaterial color="#051005" roughness={0.1} metalness={0.8} />
+        <meshStandardMaterial color="#020617" roughness={0.1} metalness={0.8} />
       </mesh>
 
       <EffectComposer disableNormalPass>
-        {/* Tuned bloom to pick up the Gold/Red but keep Green distinct */}
-        <Bloom luminanceThreshold={0.65} mipmapBlur intensity={1.2} radius={0.5} />
+        {/* Adjusted bloom to prevent washing out colors */}
+        <Bloom luminanceThreshold={0.7} mipmapBlur intensity={1.0} radius={0.5} />
         <Noise opacity={0.03} />
         <Vignette eskil={false} offset={0.1} darkness={1.0} />
       </EffectComposer>
@@ -463,7 +467,7 @@ const App = () => {
       <HandTracker onUpdateInteraction={handleInteractionUpdate} />
 
       <Canvas 
-        gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
+        gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
         dpr={[1, 2]}
       >
         <Suspense fallback={null}>
@@ -472,7 +476,7 @@ const App = () => {
       </Canvas>
 
       <div className="absolute top-0 left-0 w-full p-8 flex flex-col items-center pointer-events-none select-none z-10">
-        <h1 className="text-5xl md:text-7xl font-serif text-transparent bg-clip-text bg-gradient-to-b from-[#D42426] via-[#FFD700] to-[#228B22] drop-shadow-[0_0_15px_rgba(255,215,0,0.3)] font-bold tracking-tight text-center" style={{ fontFamily: 'Times New Roman' }}>
+        <h1 className="text-5xl md:text-7xl font-serif text-transparent bg-clip-text bg-gradient-to-b from-[#EF4444] via-[#FACC15] to-[#228B22] drop-shadow-[0_0_15px_rgba(255,215,0,0.3)] font-bold tracking-tight text-center" style={{ fontFamily: 'Times New Roman' }}>
           Merry Christmas
         </h1>
         <div className="h-px w-48 bg-gradient-to-r from-transparent via-red-500 to-transparent mt-3 opacity-60"></div>
