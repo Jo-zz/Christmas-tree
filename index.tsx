@@ -13,7 +13,6 @@ const TREE_HEIGHT = 16;
 const TREE_RADIUS = 6.5;
 
 // True Christmas Colors - Adjusted for visibility
-// Using slightly brighter greens so they don't look black in the dark
 const COLOR_PINE_DEEP = "#0f4d2c"; // Deep Pine
 const COLOR_PINE_VIBRANT = "#2e8b57"; // Sea Green / Forest Green
 const COLOR_RED = "#EF4444"; // Bright Red (Tailwind Red 500)
@@ -37,7 +36,12 @@ const getVisionTasks = () => {
     if (!visionTasksPromise) {
         visionTasksPromise = FilesetResolver.forVisionTasks(
             "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.9/wasm"
-        );
+        ).catch((err) => {
+            // If initialization fails (e.g. network abort), reset promise so we can try again
+            console.error("Failed to load Vision Tasks WASM", err);
+            visionTasksPromise = null;
+            throw err;
+        });
     }
     return visionTasksPromise;
 };
@@ -392,20 +396,26 @@ const ParticleTree = ({
   return (
     <group ref={groupRef}>
       <instancedMesh ref={meshRef} args={[undefined, undefined, PARTICLE_COUNT]}>
-        <octahedronGeometry args={[1, 0]} /> 
+        <octahedronGeometry args={[1, 0]}>
+             {/* 
+                FIX: Attach the attribute directly to the geometry's attributes-color property.
+                This ensures custom colors are rendered correctly.
+             */}
+            <instancedBufferAttribute 
+                attach="attributes-color" 
+                args={[colors, 3]} 
+            />
+        </octahedronGeometry>
+        
         {/* 
-           KEY FIX: Low Metalness, High Roughness.
-           This ensures the green color is actually visible and not washed out by reflections.
+           Low Metalness, High Roughness for natural green look.
+           toneMapped=false keeps colors vibrant.
         */}
         <meshStandardMaterial 
             vertexColors 
             toneMapped={false} 
             roughness={0.7} 
             metalness={0.1}
-        />
-        <instancedBufferAttribute 
-            attach="geometry-attributes-color" 
-            args={[colors, 3]} 
         />
       </instancedMesh>
     </group>
