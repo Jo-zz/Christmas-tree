@@ -528,7 +528,7 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
       <OrbitControls enableZoom={false} enablePan={false} maxPolarAngle={Math.PI/1.8} minPolarAngle={Math.PI/2.5} />
       
       {/* Lights - Adjusted for Green Visibility */}
-      <ambientLight intensity={0.4} color="#34d399" /> 
+      <ambientLight intensity={0.6} color="#34d399" /> 
       <pointLight position={[15, 20, 15]} intensity={1.5} color="#fbbf24" distance={50} decay={2} /> 
       <pointLight position={[-15, 10, -5]} intensity={1.0} color="#4ade80" distance={50} /> 
       <spotLight position={[0, 40, -10]} intensity={2} angle={0.6} penumbra={0.5} color="#86efac" />
@@ -551,9 +551,9 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
                 rotationTarget={handX} 
                 roughness={0.7}
                 metalness={0.1}
-                // Fix: Use dark green emissive to allow color to show through while glowing
+                // Fix: Reduce emissive intensity so it doesn't wash out to white
                 emissiveColor="#052e16" 
-                emissiveIntensity={0.5}
+                emissiveIntensity={0.2}
             />
 
             {/* 2. Snow on Tips */}
@@ -613,8 +613,8 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
       </Float>
 
       <EffectComposer disableNormalPass>
-        {/* Adjusted exposure to prevent white washout */}
-        <Bloom luminanceThreshold={0.7} mipmapBlur intensity={1.5} radius={0.5} />
+        {/* Adjusted bloom threshold to 1.1 so leaves (intensity ~1.0) don't glow white, only lights do */}
+        <Bloom luminanceThreshold={1.1} mipmapBlur intensity={1.5} radius={0.5} />
         <Vignette eskil={false} offset={0.1} darkness={0.6} />
       </EffectComposer>
     </>
