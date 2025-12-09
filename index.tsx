@@ -21,8 +21,8 @@ const COUNT_ORNAMENTS = 300;
 
 // Emojis list
 const HOLIDAY_EMOJIS = ["🎁", "🎄", "🧦", "🦌", "🔔", "⛄", "🍭", "❄️", "🎅", "🍪", "🐶", "🕯️", "🎀", "🌟", "🎈"];
-// Increased to 30 per type -> 30 * 15 = 450 total (~10% of 4500 leaves)
-const EMOJI_COUNT_PER_TYPE = 30; 
+// Decreased to 15 per type -> 15 * 15 = 225 total (~5% of 4500 leaves)
+const EMOJI_COUNT_PER_TYPE = 15; 
 
 // --- Types ---
 type InteractionState = "tree" | "exploded";
@@ -333,7 +333,7 @@ const GenericParticleSystem = ({
             {geometryType === "octahedron" && <octahedronGeometry args={[1, 0]} />}
             
             <meshStandardMaterial 
-                color={Array.isArray(color) ? "white" : color} // If using vertex colors, base must be white
+                color="white" // FIX: Ensure base color is white so vertex colors show properly
                 vertexColors={Array.isArray(color)}
                 roughness={roughness}
                 metalness={metalness}
@@ -527,11 +527,11 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
       <PerspectiveCamera makeDefault position={[0, 2, 38]} fov={45} />
       <OrbitControls enableZoom={false} enablePan={false} maxPolarAngle={Math.PI/1.8} minPolarAngle={Math.PI/2.5} />
       
-      {/* Lights - Adjusted for Green Visibility */}
-      <ambientLight intensity={0.6} color="#34d399" /> 
+      {/* Lights - Adjusted for Cyan/Teal Visibility */}
+      <ambientLight intensity={0.6} color="#2dd4bf" /> 
       <pointLight position={[15, 20, 15]} intensity={1.5} color="#fbbf24" distance={50} decay={2} /> 
-      <pointLight position={[-15, 10, -5]} intensity={1.0} color="#4ade80" distance={50} /> 
-      <spotLight position={[0, 40, -10]} intensity={2} angle={0.6} penumbra={0.5} color="#86efac" />
+      <pointLight position={[-15, 10, -5]} intensity={1.0} color="#0d9488" distance={50} /> 
+      <spotLight position={[0, 40, -10]} intensity={2} angle={0.6} penumbra={0.5} color="#ccfbf1" />
 
       <Stars radius={100} depth={50} count={2500} factor={4} saturation={0} fade speed={0.5} />
       <FallingSnow />
@@ -539,11 +539,11 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
       <Float speed={1} rotationIntensity={0.1} floatIntensity={0.2}>
         <group position={[0, -2, 0]}>
             
-            {/* 1. Main Foliage - Vibrant Green */}
+            {/* 1. Main Foliage - Teal / Cyan Green (青绿色) */}
             <GenericParticleSystem 
                 count={COUNT_LEAVES} 
-                // Mix of Emerald, Green, and Bright Green
-                color={["#16a34a", "#22c55e", "#15803d", "#4ade80"]} 
+                // Mix of Teal, Cyan, and Emerald for depth
+                color={["#14b8a6", "#0d9488", "#0f766e", "#2dd4bf"]} 
                 geometryType="tetra" 
                 distributionType="foliage" 
                 scale={0.55} 
@@ -551,9 +551,9 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
                 rotationTarget={handX} 
                 roughness={0.7}
                 metalness={0.1}
-                // Fix: Reduce emissive intensity so it doesn't wash out to white
-                emissiveColor="#052e16" 
-                emissiveIntensity={0.2}
+                // Emissive Dark Teal to prevent white-wash but keep visibility
+                emissiveColor="#042f2e" 
+                emissiveIntensity={0.3}
             />
 
             {/* 2. Snow on Tips */}
@@ -569,7 +569,7 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
                 emissiveIntensity={0.8}
             />
 
-            {/* 3. New Emoji Particles (~10% of tree) */}
+            {/* 3. Emoji Particles (~5% of tree) */}
             {HOLIDAY_EMOJIS.map((emoji) => (
                 <EmojiParticleSystem 
                     key={emoji} 
