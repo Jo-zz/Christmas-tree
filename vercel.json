@@ -1,0 +1,8 @@
+{
+  "buildCommand": "echo 'No build step needed (ES Modules)',
+  "outputDirectory": ".",
+  "framework": null,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
