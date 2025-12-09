@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, Suspense, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import * as THREE from "three";
@@ -10,8 +9,9 @@ import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
 // --- Configuration ---
 const TREE_HEIGHT = 18;
 const TREE_RADIUS = 7.5;
-const EXPLOSION_SPEED = 0.08;
-const RETURN_SPEED = 0.06;
+// Increased speeds for snappier reaction
+const EXPLOSION_SPEED = 0.12;
+const RETURN_SPEED = 0.10;
 
 // Particle Counts
 const COUNT_LEAVES = 4500;
@@ -21,8 +21,13 @@ const COUNT_ORNAMENTS = 300;
 
 // Emojis list
 const HOLIDAY_EMOJIS = ["🎁", "🎄", "🧦", "🦌", "🔔", "⛄", "🍭", "❄️", "🎅", "🍪", "🐶", "🕯️", "🎀", "🌟", "🎈"];
-// Decreased to 15 per type -> 15 * 15 = 225 total (~5% of 4500 leaves)
-const EMOJI_COUNT_PER_TYPE = 15; 
+// Increased to 30 per type -> 30 * 15 = 450 total (~10% of 4500 leaves)
+const EMOJI_COUNT_PER_TYPE = 30; 
+
+// --- Static Colors (Moved outside component to prevent re-renders) ---
+const LEAF_COLORS = ["#16a34a", "#22c55e", "#15803d", "#4ade80"];
+const ORNAMENT_COLORS = ["#fbbf24", "#f59e0b", "#2dd4bf"];
+const RIBBON_COLORS = ["#fbbf24", "#fcd34d"];
 
 // --- Types ---
 type InteractionState = "tree" | "exploded";
@@ -184,7 +189,9 @@ const GenericParticleSystem = ({
 }) => {
     const meshRef = useRef<THREE.InstancedMesh>(null);
     const dummy = useMemo(() => new THREE.Object3D(), []);
-    const colors = Array.isArray(color) ? color : [color];
+    
+    // IMPORTANT: Ensure stable reference for colors to prevent re-generation loop
+    const colors = useMemo(() => Array.isArray(color) ? color : [color], [color]); 
     const colorArray = useMemo(() => new Float32Array(count * 3), [count, colors]);
 
     // Generate positions
@@ -293,17 +300,19 @@ const GenericParticleSystem = ({
             let y = currentPos.current[ix+1];
             let z = currentPos.current[ix+2];
 
-            if (targetState === "tree") {
-                const cosR = Math.cos(rotY);
-                const sinR = Math.sin(rotY);
-                const rx = x * cosR - z * sinR;
-                const rz = x * sinR + z * cosR;
-                x = rx;
-                z = rz;
-            } else {
+            // Add slight ambient float if exploded
+            if (targetState === "exploded") {
                 x += Math.sin(time * 0.5 + i) * 0.05;
                 y += Math.cos(time * 0.3 + i) * 0.05;
             }
+
+            // Apply Hand Rotation regardless of state (Tree OR Exploded)
+            const cosR = Math.cos(rotY);
+            const sinR = Math.sin(rotY);
+            const rx = x * cosR - z * sinR;
+            const rz = x * sinR + z * cosR;
+            x = rx;
+            z = rz;
 
             dummy.position.set(x, y, z);
             dummy.rotation.set(
@@ -333,11 +342,11 @@ const GenericParticleSystem = ({
             {geometryType === "octahedron" && <octahedronGeometry args={[1, 0]} />}
             
             <meshStandardMaterial 
-                color="white" // FIX: Ensure base color is white so vertex colors show properly
+                color={Array.isArray(color) ? "white" : color} // If using vertex colors, base must be white
                 vertexColors={Array.isArray(color)}
                 roughness={roughness}
                 metalness={metalness}
-                emissive={emissiveColor} 
+                emissive={emissiveColor} // Fix: Use custom emissive color, not hardcoded white
                 emissiveIntensity={emissiveIntensity}
                 toneMapped={false}
             />
@@ -418,17 +427,18 @@ const EmojiParticleSystem: React.FC<{
             let y = currentPos.current[ix+1];
             let z = currentPos.current[ix+2];
 
-            if (targetState === "tree") {
-                const cosR = Math.cos(rotY);
-                const sinR = Math.sin(rotY);
-                const rx = x * cosR - z * sinR;
-                const rz = x * sinR + z * cosR;
-                x = rx;
-                z = rz;
-            } else {
+            if (targetState === "exploded") {
                  x += Math.sin(time * 0.5 + i) * 0.05;
                  y += Math.cos(time * 0.3 + i) * 0.05;
             }
+
+            // Apply Hand Rotation regardless of state
+            const cosR = Math.cos(rotY);
+            const sinR = Math.sin(rotY);
+            const rx = x * cosR - z * sinR;
+            const rz = x * sinR + z * cosR;
+            x = rx;
+            z = rz;
 
             dummy.position.set(x, y, z);
             // Billboard effect: look at camera manually? Or just simple rotation
@@ -464,8 +474,10 @@ const TopStar = ({ targetState, rotationTarget }: { targetState: InteractionStat
         
         ref.current.position.y = 9.5 + Math.sin(time * 2) * 0.2;
         
+        // Rotation for both states
+        ref.current.rotation.y = rotY + time * 0.5;
+
         if (targetState === "tree") {
-            ref.current.rotation.y = rotY + time * 0.5;
             ref.current.scale.lerp(new THREE.Vector3(1.8, 1.8, 1.8), 0.1);
         } else {
             ref.current.scale.lerp(new THREE.Vector3(0, 0, 0), 0.1);
@@ -527,11 +539,11 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
       <PerspectiveCamera makeDefault position={[0, 2, 38]} fov={45} />
       <OrbitControls enableZoom={false} enablePan={false} maxPolarAngle={Math.PI/1.8} minPolarAngle={Math.PI/2.5} />
       
-      {/* Lights - Adjusted for Cyan/Teal Visibility */}
-      <ambientLight intensity={0.6} color="#2dd4bf" /> 
-      <pointLight position={[15, 20, 15]} intensity={1.5} color="#fbbf24" distance={50} decay={2} /> 
-      <pointLight position={[-15, 10, -5]} intensity={1.0} color="#0d9488" distance={50} /> 
-      <spotLight position={[0, 40, -10]} intensity={2} angle={0.6} penumbra={0.5} color="#ccfbf1" />
+      {/* Lights */}
+      <ambientLight intensity={0.6} color="#34d399" /> 
+      <pointLight position={[15, 20, 15]} intensity={2} color="#fbbf24" distance={50} decay={2} /> 
+      <pointLight position={[-15, 10, -5]} intensity={1.5} color="#4ade80" distance={50} /> 
+      <spotLight position={[0, 40, -10]} intensity={3} angle={0.6} penumbra={0.5} color="#86efac" />
 
       <Stars radius={100} depth={50} count={2500} factor={4} saturation={0} fade speed={0.5} />
       <FallingSnow />
@@ -539,21 +551,21 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
       <Float speed={1} rotationIntensity={0.1} floatIntensity={0.2}>
         <group position={[0, -2, 0]}>
             
-            {/* 1. Main Foliage - Teal / Cyan Green (青绿色) */}
+            {/* 1. Main Foliage - Vibrant Green */}
             <GenericParticleSystem 
                 count={COUNT_LEAVES} 
-                // Mix of Teal, Cyan, and Emerald for depth
-                color={["#14b8a6", "#0d9488", "#0f766e", "#2dd4bf"]} 
+                // Use static color constant
+                color={LEAF_COLORS} 
                 geometryType="tetra" 
                 distributionType="foliage" 
                 scale={0.55} 
                 targetState={interactionState} 
                 rotationTarget={handX} 
                 roughness={0.7}
-                metalness={0.1}
-                // Emissive Dark Teal to prevent white-wash but keep visibility
-                emissiveColor="#042f2e" 
-                emissiveIntensity={0.3}
+                metalness={0.0}
+                // Fix: Use dark green emissive, not white, to allow color to show through
+                emissiveColor="#052e16" 
+                emissiveIntensity={0.5}
             />
 
             {/* 2. Snow on Tips */}
@@ -569,7 +581,7 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
                 emissiveIntensity={0.8}
             />
 
-            {/* 3. Emoji Particles (~5% of tree) */}
+            {/* 3. New Emoji Particles (~10% of tree) */}
             {HOLIDAY_EMOJIS.map((emoji) => (
                 <EmojiParticleSystem 
                     key={emoji} 
@@ -582,7 +594,8 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
             {/* 4. Ornaments - Gold & Teal */}
              <GenericParticleSystem 
                 count={COUNT_ORNAMENTS} 
-                color={["#fbbf24", "#f59e0b", "#2dd4bf"]} 
+                // Use static color constant
+                color={ORNAMENT_COLORS} 
                 geometryType="sphere" 
                 distributionType="ornament" 
                 scale={0.45} 
@@ -595,7 +608,8 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
             {/* 5. Golden Spiral Ribbon - 3D Stars (Octahedron), Small */}
             <GenericParticleSystem 
                 count={COUNT_RIBBON} 
-                color={["#fbbf24", "#fcd34d"]} 
+                // Use static color constant
+                color={RIBBON_COLORS} 
                 geometryType="octahedron" 
                 distributionType="ribbon" 
                 scale={0.12} 
@@ -612,9 +626,8 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
         </group>
       </Float>
 
-      <EffectComposer disableNormalPass>
-        {/* Adjusted bloom threshold to 1.1 so leaves (intensity ~1.0) don't glow white, only lights do */}
-        <Bloom luminanceThreshold={1.1} mipmapBlur intensity={1.5} radius={0.5} />
+      <EffectComposer enableNormalPass={false}>
+        <Bloom luminanceThreshold={0.7} mipmapBlur intensity={1.5} radius={0.5} />
         <Vignette eskil={false} offset={0.1} darkness={0.6} />
       </EffectComposer>
     </>
@@ -632,8 +645,7 @@ const App = () => {
           setHandX(x);
       }} />
 
-      {/* Reduced exposure to 1.0 to keep colors saturated */}
-      <Canvas gl={{ antialias: true, toneMapping: THREE.ReinhardToneMapping, toneMappingExposure: 1.0 }} dpr={[1, 2]}>
+      <Canvas gl={{ antialias: true, toneMapping: THREE.ReinhardToneMapping, toneMappingExposure: 1.2 }} dpr={[1, 2]}>
         <Suspense fallback={null}>
             <Scene interactionState={interactionState} handX={handX} />
         </Suspense>
