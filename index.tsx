@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, Suspense, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Stars, Float, Sparkles, Text } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, Stars, Float, Sparkles } from "@react-three/drei";
 import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
 import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
 
@@ -24,7 +24,7 @@ const HOLIDAY_EMOJIS = ["🎁", "🎄", "🧦", "🦌", "🔔", "⛄", "🍭", "
 // Increased to 30 per type -> 30 * 15 = 450 total (~10% of 4500 leaves)
 const EMOJI_COUNT_PER_TYPE = 30; 
 
-// --- Static Colors (Moved outside component to prevent re-renders) ---
+// --- Static Colors (Defined outside component to prevent re-renders) ---
 const LEAF_COLORS = ["#16a34a", "#22c55e", "#15803d", "#4ade80"];
 const ORNAMENT_COLORS = ["#fbbf24", "#f59e0b", "#2dd4bf"];
 const RIBBON_COLORS = ["#fbbf24", "#fcd34d"];
