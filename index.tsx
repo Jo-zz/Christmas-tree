@@ -337,7 +337,7 @@ const GenericParticleSystem = ({
                 vertexColors={Array.isArray(color)}
                 roughness={roughness}
                 metalness={metalness}
-                emissive={emissiveColor} // Fix: Use custom emissive color, not hardcoded white
+                emissive={emissiveColor} 
                 emissiveIntensity={emissiveIntensity}
                 toneMapped={false}
             />
@@ -527,11 +527,11 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
       <PerspectiveCamera makeDefault position={[0, 2, 38]} fov={45} />
       <OrbitControls enableZoom={false} enablePan={false} maxPolarAngle={Math.PI/1.8} minPolarAngle={Math.PI/2.5} />
       
-      {/* Lights */}
-      <ambientLight intensity={0.6} color="#34d399" /> 
-      <pointLight position={[15, 20, 15]} intensity={2} color="#fbbf24" distance={50} decay={2} /> 
-      <pointLight position={[-15, 10, -5]} intensity={1.5} color="#4ade80" distance={50} /> 
-      <spotLight position={[0, 40, -10]} intensity={3} angle={0.6} penumbra={0.5} color="#86efac" />
+      {/* Lights - Adjusted for Green Visibility */}
+      <ambientLight intensity={0.4} color="#34d399" /> 
+      <pointLight position={[15, 20, 15]} intensity={1.5} color="#fbbf24" distance={50} decay={2} /> 
+      <pointLight position={[-15, 10, -5]} intensity={1.0} color="#4ade80" distance={50} /> 
+      <spotLight position={[0, 40, -10]} intensity={2} angle={0.6} penumbra={0.5} color="#86efac" />
 
       <Stars radius={100} depth={50} count={2500} factor={4} saturation={0} fade speed={0.5} />
       <FallingSnow />
@@ -550,8 +550,8 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
                 targetState={interactionState} 
                 rotationTarget={handX} 
                 roughness={0.7}
-                metalness={0.0}
-                // Fix: Use dark green emissive, not white, to allow color to show through
+                metalness={0.1}
+                // Fix: Use dark green emissive to allow color to show through while glowing
                 emissiveColor="#052e16" 
                 emissiveIntensity={0.5}
             />
@@ -613,6 +613,7 @@ const Scene = ({ interactionState, handX }: { interactionState: InteractionState
       </Float>
 
       <EffectComposer disableNormalPass>
+        {/* Adjusted exposure to prevent white washout */}
         <Bloom luminanceThreshold={0.7} mipmapBlur intensity={1.5} radius={0.5} />
         <Vignette eskil={false} offset={0.1} darkness={0.6} />
       </EffectComposer>
@@ -631,7 +632,8 @@ const App = () => {
           setHandX(x);
       }} />
 
-      <Canvas gl={{ antialias: true, toneMapping: THREE.ReinhardToneMapping, toneMappingExposure: 1.2 }} dpr={[1, 2]}>
+      {/* Reduced exposure to 1.0 to keep colors saturated */}
+      <Canvas gl={{ antialias: true, toneMapping: THREE.ReinhardToneMapping, toneMappingExposure: 1.0 }} dpr={[1, 2]}>
         <Suspense fallback={null}>
             <Scene interactionState={interactionState} handX={handX} />
         </Suspense>
