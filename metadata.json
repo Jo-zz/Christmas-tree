@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Luxury Interactive Christmas Tree1",
+  "description": "A high-fidelity 3D Christmas tree that deconstructs into a galaxy of stars via hand gestures.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
